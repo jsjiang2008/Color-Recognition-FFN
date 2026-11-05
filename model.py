@@ -45,3 +45,18 @@ class ColorClassifier(nn.Module):
         x = torch.sigmoid(self.fc2(x))
         return x
 
+# Instantiate neural network
+model = ColorClassifier()
+
+# Criterion is loss function (binary cross-entropy)
+criterion = nn.BCELoss()
+
+# SGD: stochastic gradient descent, breaks training set to mini-batches
+# Makes it more efficient to update the weights iteratively 
+optimizer = optim.SGD(model.parameters(), lr=0.01)
+
+batch_size = 64  # Example batch size, number of training examples in a mini-batch
+# TensorDataset and DataLoader breaks the training set to mini batches
+# Shuffles data around for better distribution
+train_dataset = TensorDataset(X_train, y_train)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
