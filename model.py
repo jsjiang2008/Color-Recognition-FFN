@@ -60,3 +60,34 @@ batch_size = 64  # Example batch size, number of training examples in a mini-bat
 # Shuffles data around for better distribution
 train_dataset = TensorDataset(X_train, y_train)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+# Train the model
+
+# Define number of loops
+num_epochs = 1000
+
+for epoch in range(num_epochs):
+    # Set model to training mode
+    model.train()
+
+    # Iterate by batches
+    for batch_X, batch_y in train_loader:
+        # Clear the gradients
+        optimizer.zero_grad()
+
+        # Forward pass
+        # Makes predictions into outputs and calculates the loss
+        outputs = model(batch_X)
+        loss = criterion(outputs, batch_y)
+
+        # Backward pass and optimization
+        # PyTorch uses chain rule to calculate how each weight contributed to that loss
+        # This is called backpropagation
+        loss.backward()
+        # Optimizer reads those gadients and updates weights and biases
+        optimizer.step()
+
+    
+    if (epoch + 1) % 10 == 0:
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}")
+
