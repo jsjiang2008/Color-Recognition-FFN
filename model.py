@@ -25,3 +25,23 @@ X_train = torch.tensor(X_train, dtype=torch.float32)
 X_test = torch.tensor(X_test, dtype=torch.float32)
 y_train = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
 y_test = torch.tensor(y_test, dtype=torch.float32).view(-1, 1)
+
+# Define neural network
+# Inherits from nn.Module, base class for all neural networks in PyTorch
+class ColorClassifier(nn.Module):
+    # __init__ runs upon object creation
+    def __init__(self):
+        super(ColorClassifier, self).__init__()
+        # fc is short for "fully-connected", meaning weighted edges between neurons in two adjacent layers
+        self.fc1 = nn.Linear(3, 10)  # 3 input features (R, G, B) and 10 hidden neurons
+        self.fc2 = nn.Linear(10, 1)  # 1 output (binary classification)
+
+    # forward defines how data is passed through the network during forward pass
+    def forward(self, x):
+        # ReLU activation function for hidden layer neurons
+        x = torch.relu(self.fc1(x))
+        # sigmoid activation function for the output, which is 0 or 1
+        # Hopefully 0 is cold 1 is warm
+        x = torch.sigmoid(self.fc2(x))
+        return x
+
