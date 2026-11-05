@@ -20,3 +20,8 @@ def generate_synthetic_data(num_samples = 100000):
 X, y = generate_synthetic_data()
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
 
+# Convert data to PyTorch tensors
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
+y_test = torch.tensor(y_test, dtype=torch.float32).view(-1, 1)
