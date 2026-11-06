@@ -3,7 +3,16 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, TensorDataset
+
+# Check for NVIDIA GPU
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(0)} is available.")
+else:
+    print("No GPU available. Training will run on CPU.")
+
+# Choose GPU or CPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
 # Generate training data
 def generate_synthetic_data(num_samples = 100000):
@@ -46,7 +55,7 @@ class ColorClassifier(nn.Module):
         return x
 
 # Instantiate neural network
-model = ColorClassifier()
+model = ColorClassifier().to(device)
 
 # Criterion is loss function (binary cross-entropy)
 criterion = nn.BCELoss()
@@ -55,11 +64,13 @@ criterion = nn.BCELoss()
 # Makes it more efficient to update the weights iteratively 
 optimizer = optim.SGD(model.parameters(), lr=0.01)
 
-batch_size = 64  # Example batch size, number of training examples in a mini-batch
-# TensorDataset and DataLoader breaks the training set to mini batches
-# Shuffles data around for better distribution
-train_dataset = TensorDataset(X_train, y_train)
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+# Larger batches reduce GPU launch overhead for this tiny network.
+# Batch size affects convergence; lower it if accuracy suffers.
+batch_size = 1024 if device.type == "cuda" else 64
+
+# The training tensors total about 1.3 MB, so keep them on the device.
+X_train = X_train.to(device)
+y_train = y_train.to(device)
 
 # Train the model
 
@@ -70,8 +81,14 @@ for epoch in range(num_epochs):
     # Set model to training mode
     model.train()
 
-    # Iterate by batches
-    for batch_X, batch_y in train_loader:
+    # Shuffle on the training device once per epoch, then take batch views.
+    order = torch.randperm(X_train.size(0), device=device)
+    shuffled_X = X_train[order]
+    shuffled_y = y_train[order]
+    for batch_X, batch_y in zip(
+        shuffled_X.split(batch_size), shuffled_y.split(batch_size)
+    ):
+
         # Clear the gradients
         optimizer.zero_grad()
 
@@ -91,3 +108,17 @@ for epoch in range(num_epochs):
     if (epoch + 1) % 10 == 0:
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}")
 
+
+# Test model
+# Set to evaluation mode
+model.eval()
+# Disable gradient calculation
+with torch.no_grad():
+    X_test = X_test.to(device)
+    y_test = y_test.to(device)
+    predictions = model(X_test)
+
+    # Convert predictions to binary (round to 0 or 1)
+    predictions = (predictions > 0.5).float()
+    accuracy = (predictions == y_test).sum() / y_test.size(0)
+    print(f"Accuracy: {accuracy:.4f}")
